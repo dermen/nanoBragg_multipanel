@@ -60,10 +60,10 @@ chmod +x Miniconda3-latest-Linux-x86_64.sh
 Follow the onscreen instructions, elect to install conda somewhere convenient. I let conda build in ```$XTAL/newconda3``` for example. Then with the new conda, create the cctbx environment we will be using by providing the path to an environment file located in the dials repository
 
 ```
-source ~/newconda3/etc/profile.d/conda.sh
+source $XTAL/newconda3/etc/profile.d/conda.sh
 conda create --name cctbx --file modules/dials/.conda-envs/dials_py36_linux-64.txt
 cd $XTAL
-python bootstrap.py  build --use_conda=./newconda3/envs/cctbx/ --builder=dials --nproc=12 --config-flags='--enable_cuda'
+python bootstrap.py  build --use_conda=$XTAL/newconda3/envs/cctbx/ --builder=dials --nproc=12 --config-flags='--enable_cuda'
 ```
 
 And thats it for the build. It might take a while.  
