@@ -49,7 +49,7 @@ Next we can run bootstrap. First use bootstrap to pull in CCTBX+DIALS+DXTBX spec
 python bootstrap.py hot update --builder=dials
 ```
 
-You will see a modules folder now in ```$XTAL/modules```. This above command can routinely be run to bring in updates, though you can also go to specific module folders and run ```git pull``` for any updates.  Next we need to build a python environment and for that we use conda (usually bootstrap can also do this, but it tries to be sneaky and find hidden condas you might not want it to use, so the most fool proof installation method is as follows):
+Note bootstrap can be run with most any python, usually your system default will suffice. You will see a modules folder now in ```$XTAL/modules```. This above command can routinely be run to bring in updates, though you can also go to specific module folders and run ```git pull``` for any updates.  Next we need to build a python environment and for that we use conda (usually bootstrap can also do this, but it tries to be sneaky and find hidden condas you might not want it to use, so the most fool proof installation method is as follows):
 
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
