@@ -61,7 +61,7 @@ Follow the onscreen instructions, elect to install conda somewhere convenient. I
 
 ```
 source $XTAL/newconda3/etc/profile.d/conda.sh
-conda create --name cctbx --file modules/dials/.conda-envs/dials_py36_linux-64.txt
+conda create --name cctbx --file $XTAL/modules/dials/.conda-envs/dials_py36_linux-64.txt
 cd $XTAL
 python bootstrap.py  build --use_conda=$XTAL/newconda3/envs/cctbx/ --builder=dials --nproc=12 --config-flags='--enable_cuda'
 ```
