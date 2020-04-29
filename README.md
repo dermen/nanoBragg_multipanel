@@ -106,7 +106,7 @@ libtbx.python examples.py --model eiger
 dials.image_viewer eiger_images.h5
 ```
 
-I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc.  Eiger sim takes longer I think because the eiger model includes a finite detector sensor thickness.
+I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc. If you add the argument ```--pinkbeam``` then a 5% bandwidth X-ray spectrum will be used to simulate the scattering, and there you will definitely notice the GPU version running faster. The spectrum was recorded at BioCars. The Eiger sim takes longer than the Jungfrau - I think because the eiger model includes a finite detector sensor thickness.
 
 
 ### Optional: ipython
