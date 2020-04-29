@@ -67,6 +67,11 @@ for pidx in range(len(detector)):
                          wavelengths=wavelengths, wavelength_weights=weights, total_flux=1e12)
   background_on_panels.append(water)
 
+if args.model=='eigermono':
+  # NOTE if doing a monolithic eiger you might want to put the gaps as untrusted values
+  import h5py
+  is_a_gap = h5py.File("eiger_gaps.h5", "r")["is_a_gap"][()]  # use this mask
+
 rotations = Rotation.random(Nimg, random_state=8675309)
 with H5AttributeGeomWriter(imgfile_out, image_shape=img_sh, num_images=Nimg, detector=detector, beam=beam,
                            dtype=np.float64, compression_args=None) as writer:
@@ -88,9 +93,18 @@ with H5AttributeGeomWriter(imgfile_out, image_shape=img_sh, num_images=Nimg, det
       crystal = Crystal(A,B,C, lookup_symbol)  # instantiate dxtbx crystal model (these are usually stored in expt files output by DIALS after indexing)
 
       # simulate the spots, consider changing this function and/or its arguments to meet your needs
+      if args.model.startswith("eiger"):
+        readout_adu = 0
+      else:
+        readout_adu = 3
+
       panel_pixels = sim_spots(crystal, detector, beam, Famp, wavelengths, weights, pidx=pidx, crystal_size_mm=0.050,
                          beam_size_mm=0.001, total_flux=1e12, time_panels=True, show_params=show_params, cuda=args.cuda,
-                         mosaic_vol_A3=2000**3, profile="gauss", background_raw_pixels=background_on_panels[pidx])
+                         mosaic_vol_A3=2000**3, profile="gauss", background_raw_pixels=background_on_panels[pidx],
+                        readout_noise_adu=readout_adu)
+      if args.model == "eigermono":
+        panel_pixels[is_a_gap] = -1
+
       output_panels.append(panel_pixels)
 
     # save the image to hdf5
