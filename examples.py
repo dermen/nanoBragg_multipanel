@@ -3,7 +3,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("--cuda", action="store_true", help="try to simulate with cuda")
-parser.add_argument("--model", choices=["jungfrau", "eiger"], type=str, default="jungfrau")
+parser.add_argument("--model", choices=["jungfrau", "eiger", "eigermono"], type=str, default="jungfrau")
 args = parser.parse_args()
 
 import numpy as np
@@ -18,10 +18,13 @@ from nanoBragg_multipanel.jungfrau16M import convert_crystfel_to_dxtbx, load_det
 from nanoBragg_multipanel.utils import sim_spots, sim_background, H5AttributeGeomWriter
 
 
-if args.model=='eiger':
+if args.model.startwsith('eiger'):
   imgfile_out = "eiger_images.h5"
   from nanoBragg_multipanel.eiger16M import get_multi_panel_eiger
-  detector = get_multi_panel_eiger()
+  if args.model.endswith("mono"):
+    detector = get_multi_panel_eiger(as_single_panel=True)
+  else:
+    detector= get_multi_panel_eiger()
 else:  # elif args.model == "jungfrau":
   input_file = "Jungfrau16M_swissFEL.geom"
   output_file = input_file.replace(".geom", ".expt")  # this file will store dxtbx detector
