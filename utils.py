@@ -177,8 +177,7 @@ def sim_spots(
         print("Mosaic domain volume: %2.7g (mm^3)" % mosaic_vol_A3)
         print("spot scale: %2.7g" % SIM.spot_scale)
 
-    if cuda:
-        SIM.raw_pixels /= len(wavelengths) #panel_image /= len(energies)
+    SIM.raw_pixels /= len(wavelengths)
 
     if background_raw_pixels is not None:
         SIM.raw_pixels += background_raw_pixels*background_scale
