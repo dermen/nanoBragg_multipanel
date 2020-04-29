@@ -3,7 +3,9 @@ from __future__ import print_function
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("--cuda", action="store_true", help="try to simulate with cuda")
-parser.add_argument("--model", choices=["jungfrau", "eiger", "eigermono"], type=str, default="jungfrau", help="eiger mono is a single panel eiger")
+parser.add_argument("--model", choices=["jungfrau", "eiger", "eigermono"], type=str, default="jungfrau", help="sepcifies a detector model; eigermono is a single panel eiger")
+parser.add_argument("--pinkbeam", action="store_true", help="whether to simulate a pink beam")
+parser.add_argument("--pinkstride", type=int, choices=[1,2,3], default=2, help="stride for reading spectrum (value of 3 will then simulate every 3rd wavelength in the spectrum)")
 args = parser.parse_args()
 
 import numpy as np
@@ -33,7 +35,7 @@ else:  # elif args.model == "jungfrau":
   detector = load_detector_from_expt(output_file)
 
 # get the beam
-wavelength =1.3
+wavelength = 1.3
 sample_to_source_direction = (0, 0, 1)  # in dials, +z points from sample to source, and detector panels origins are all at -z
 beam = Beam(sample_to_source_direction, wavelength=wavelength)
 
@@ -53,6 +55,16 @@ Famp = fcalc_from_pdb(resolution=res)  # just grab the dummie structure factors
 # make an arbitrary incident energy spectrum here
 wavelengths = [wavelength]
 weights = [1]
+if args.pinkbeam:
+  # read in a spectrum measured from Biocars at Argonne
+  wavelengths, weights = np.loadtxt("Xray-spectrum_N.lam").T
+  wavelengths = wavelengths[::args.pinkstride]
+  weights = weights[::args.pinkstride]
+  # shift wavelengths to desired beam wavelength set above
+  peak_pink_wave = wavelengths[np.argmax(weights)]
+  shift = beam.get_wavelength() - peak_pink_wave
+  wavelengths += shift
+  imgfile_out = "pink_" + imgfile_out
 
 fast_dim, slow_dim = detector[0].get_image_size()
 img_sh = (len(detector), slow_dim, fast_dim)  # note for hdf5 we must abide by numpy convention for array shape
@@ -100,7 +112,7 @@ with H5AttributeGeomWriter(imgfile_out, image_shape=img_sh, num_images=Nimg, det
 
       panel_pixels = sim_spots(crystal, detector, beam, Famp, wavelengths, weights, pidx=pidx, crystal_size_mm=0.050,
                          beam_size_mm=0.001, total_flux=1e12, time_panels=True, show_params=show_params, cuda=args.cuda,
-                         mosaic_vol_A3=2000**3, profile="gauss", background_raw_pixels=background_on_panels[pidx],
+                         mosaic_vol_A3=4000**3, profile="gauss", background_raw_pixels=background_on_panels[pidx],
                         readout_noise_adu=readout_adu)
       if args.model == "eigermono":
         panel_pixels[is_a_gap] = -1

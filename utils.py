@@ -155,9 +155,10 @@ def sim_spots(
         SIM.spot_scale = spot_scale_override
 
     # Beam properties
-    SIM.xray_beams = xray_beams
-    SIM.beamsize_mm = beam_size_mm
+    # order is important here, first comes flux then comes xray beams
     SIM.flux = total_flux
+    SIM.beamsize_mm = beam_size_mm
+    SIM.xray_beams = xray_beams
 
     SIM.default_F = default_F
 
