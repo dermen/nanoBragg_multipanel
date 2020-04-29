@@ -94,7 +94,7 @@ dxtbx.install_format -u format/FormatHDF5AttributeGeometry.py
 libtbx.python -m pip install cfelpyutils --user
 ```
 
-Now we can simulate Jungfrau images
+Now we can simulate Jungfrau16M images and Eiger16M images
 
 ```
 cd $XTAL/modules/nanoBragg_multipanel/
@@ -106,12 +106,12 @@ libtbx.python examples.py --model eiger
 dials.image_viewer eiger_images.h5
 ```
 
-I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc.  Eiger sim takes longer I think because the eiger model includes a thickness.
+I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc.  Eiger sim takes longer I think because the eiger model includes a finite detector sensor thickness.
 
 
 ### Optional: ipython
 
-You can install it along with jupyter
+You can install it along with jupyter (for making jupyter notebooks)
 
 ```
 libtbx.python -m pip install jupyter
