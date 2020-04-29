@@ -42,7 +42,14 @@ def panelize_eiger(eiger_dxtbx_model, is_a_gap):
   return multiEiger
 
 
-def get_multi_panel_eiger(detdist_mm=200, pixsize_mm=0.075):
+def get_multi_panel_eiger(detdist_mm=200, pixsize_mm=0.075, as_single_panel=False):
+    """
+
+    :param detdist_mm: sample to detector in mm
+    :param pixsize_mm: pix in mm
+    :param as_single_panel: whether to return as just a large single panel camera
+    :return: dxtbx detector
+    """
     # load a file specifying the gap positions
     # this is a 2D array
     # usually -1 is a gap, so you can create this array by doing
@@ -80,6 +87,8 @@ def get_multi_panel_eiger(detdist_mm=200, pixsize_mm=0.075):
     master_det = Detector()
     master_det.add_panel(master_panel)
 
-    eiger_multi_model = panelize_eiger(master_det, is_a_gap)
+    if as_single_panel:
+        return master_det
+    else:
+        return panelize_eiger(master_det, is_a_gap)
 
-    return eiger_multi_model

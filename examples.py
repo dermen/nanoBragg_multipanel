@@ -3,7 +3,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("--cuda", action="store_true", help="try to simulate with cuda")
-parser.add_argument("--model", choices=["jungfrau", "eiger", "eigermono"], type=str, default="jungfrau")
+parser.add_argument("--model", choices=["jungfrau", "eiger", "eigermono"], type=str, default="jungfrau", help="eiger mono is a single panel eiger")
 args = parser.parse_args()
 
 import numpy as np
@@ -17,9 +17,9 @@ from dxtbx.model import Beam, Crystal
 from nanoBragg_multipanel.jungfrau16M import convert_crystfel_to_dxtbx, load_detector_from_expt
 from nanoBragg_multipanel.utils import sim_spots, sim_background, H5AttributeGeomWriter
 
+imgfile_out = "%s_images.h5" % args.model
 
-if args.model.startwsith('eiger'):
-  imgfile_out = "eiger_images.h5"
+if args.model.startswith('eiger'):
   from nanoBragg_multipanel.eiger16M import get_multi_panel_eiger
   if args.model.endswith("mono"):
     detector = get_multi_panel_eiger(as_single_panel=True)
@@ -31,7 +31,6 @@ else:  # elif args.model == "jungfrau":
   convert_crystfel_to_dxtbx(input_file, output_file, detdist_override=250)  # override the detector distance (mm)
   # get the detector
   detector = load_detector_from_expt(output_file)
-  imgfile_out = "jungfrau_images.h5"
 
 # get the beam
 wavelength =1.3
