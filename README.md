@@ -98,12 +98,15 @@ Now we can simulate Jungfrau images
 
 ```
 cd $XTAL/modules/nanoBragg_multipanel/
-libtbx.python jungfrau16M.py
+libtbx.python examples.py
 
-dials.image_viewer some_jungfrau16M_sims.h5
+dials.image_viewer jungfrau_images.h5
+
+libtbx.python examples.py --model eiger
+dials.image_viewer eiger_images.h5
 ```
 
-I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc.  
+I hope the script provides a good example of how to simulate multi panel setups! You can use cuda by adding the argument ```--cuda```, though speed ups may not be noticable until you switch on mosacitiy divergence etc.  Eiger sim takes longer I think because the eiger model includes a thickness.
 
 
 ### Optional: ipython
