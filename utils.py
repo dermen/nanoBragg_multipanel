@@ -1,13 +1,9 @@
 
 import time
-import numpy as np
-from scipy import constants
 import json
 import h5py
 import numpy as np
 
-#import simtbx
-#shapetype = simtbx.nanoBragg.shapetype
 from simtbx.nanoBragg import shapetype
 from simtbx.nanoBragg import nanoBragg
 from scitbx.array_family import flex
@@ -15,13 +11,24 @@ from dxtbx_model_ext import flex_Beam
 from dxtbx.model import BeamFactory
 
 
-ENERGY_CONV = 1e10*constants.c*constants.h / constants.electron_volt
-
-
 def sim_background(DETECTOR, BEAM,wavelengths, wavelength_weights,
                    total_flux, pidx=0, beam_size_mm=0.001,
                    Fbg_vs_stol=None, sample_thick_mm=100, density_gcm3=1,
                    molecular_weight=18):
+    """
+    :param DETECTOR:
+    :param BEAM: see sim_spots
+    :param wavelengths: see sim_spots
+    :param wavelength_weights: see sim_spots
+    :param total_flux: see sim_spots
+    :param pidx: see sim_spots
+    :param beam_size_mm: see sim_spots
+    :param Fbg_vs_stol: list of tuples where each tuple is (Fbg, sin theta over lambda)
+    :param sample_thick_mm: path length of background that is exposed by the beam
+    :param density_gcm3: density of background  (defaults to water)
+    :param molecular_weight: molecular weight of background (defaults to water)
+    :return: raw_pixels as flex array, these can be passed to sim_spots function below
+    """
     wavelength_weights = np.array(wavelength_weights)
     weights = (wavelength_weights / wavelength_weights.sum()) * total_flux
     spectrum = list(zip(wavelengths, weights))
@@ -59,6 +66,43 @@ def sim_spots(
         recenter=True, spot_scale_override=None, add_noise=True,
         adc_offset=10, readout_noise_adu=3,gain=1,
         background_raw_pixels=None, background_scale=1):
+    """
+    :param CRYSTAL:  dxtbx crystal model (e.g. from dials.index or dials.stills_process)
+    :param DETECTOR: dxtbx detector model
+    :param BEAM: dxtbx beam model
+    :param Famp: cctbx miller array (.data() attribute should point to SF amplitudes)
+    :param wavelengths: wavelengths in Angstrom
+    :param wavelength_weights: weights for each wavelength in Angstroms (for pink beam simulation)
+    :param total_flux: total flux per pulse
+    :param pidx: panel index
+    :param cuda: whether to use cuda, if so provide correct device Id (use nvidia-smi to check)
+    :param oversample: oversample the pixel by this factor. If 0, it will be auto determined by nanoBragg
+    :param mosaic_vol_A3: volume of mosaic domain in crystal
+    :param mos_dom: for mosacic spread calculations, use this many mosaic domains to sample the spread
+    :param mos_spread: width of mosaic spread distribution (degrees) for simuting spherical cap effect
+    :param profile: profile of RELP (can be "round", "tophat", "square", or "gauss"). default is "square"
+    :param crystal_size_mm: diameter of crystal (in mm)
+    :param beam_size_mm: diameter of beam focus (in mm)
+    :param device_Id: for running GPU, provide the device Id (usualy 0 for hosts with 1 GPU)
+    :param show_params: display the nanoBragg prams at the start
+    :param printout_pix: fast scan/ slow scan coordinate of a pixel to printout low level nanoBragg parameters (useful for debug)
+    :param time_panels: time the simulation
+    :param verbose: verbosity level for nanobragg (0=silent 10=blarg)
+    :param default_F: default amplitude for miller indices not included in Famp
+    :param interpolate: use interpolation for small mosaic domains (set to 0 to disable)
+    :param noise_seed: seed for generating random poisson and readout noise
+    :param calib_seed: seed for generating gain calibration noise
+    :param mosaic_seed: seed for generating mosaic spread
+    :param recenter: recenter the panel after instantiating (do this if the detector and incident beam are not squred up, e.g. for tilted geometries)
+    :param spot_scale_override: override the spot scale parameter which is currently determined by taking ration of crystal volume and mosaic domain volume
+    :param add_noise: whether to add noise
+    :param adc_offset: offset to pixel values
+    :param readout_noise_adu: readout noise level (default is 3)
+    :param gain: quantum gain (default is 1)
+    :param background_raw_pixels: flex array of background pixels (output from sim_background function)
+    :param background_scale: option to boost ot decrease the background level
+    :return: simulated pixels as a numpy array, that can then be written to an hdf5 file
+    """
 
     assert len(wavelengths) == len(wavelength_weights)
 
@@ -156,6 +200,13 @@ def sim_spots(
 
 
 def determine_spot_scale(beam_size_mm, crystal_thick_mm, mosaic_vol_A3):
+    """
+
+    :param beam_size_mm:  diameter of beam focus (millimeter)
+    :param crystal_thick_mm: thickness of crystal (millimeter)
+    :param mosaic_vol_A3:  volume of a mosaic block in crystal (cubic angstrom)
+    :return: roughly the number of exposed mosaic blocks
+    """
     if beam_size_mm <= crystal_thick_mm:
         illum_xtal_vol = crystal_thick_mm * beam_size_mm**2
     else:
@@ -164,6 +215,12 @@ def determine_spot_scale(beam_size_mm, crystal_thick_mm, mosaic_vol_A3):
 
 
 def get_xray_beams(spectrum, beam_originator):
+    """
+
+    :param spectrum:  list of tuples where one tuple is (wavelength_Angstrom, flux)
+    :param beam_originator: beam where we derive the s0 vector and polarization and divergence
+    :return: flex_Beam array to be set as a nanoBragg property
+    """
     xray_beams = flex_Beam()
     for wavelen, flux in spectrum:
         beam = BeamFactory.simple(wavelen*1e-10)
@@ -183,6 +240,9 @@ def Amatrix_dials2nanoBragg(crystal):
     :param crystal: cctbx crystal
     :return: Amatrix as a tuple
     """
+    sgi = crystal.get_space_group().info()
+    if sgi.type().lookup_symbol().startswith("C"):
+        raise ValueError("You need to convert your crystal model to its primitive setting first")
     Amatrix = tuple(np.array(crystal.get_A()).reshape((3, 3)).T.ravel())
     return Amatrix
 
@@ -225,6 +285,9 @@ class H5AttributeGeomWriter:
         self._counter = 0
 
     def add_image(self, image):
+        """
+        :param image: a single image as numpy image, same shape as used to instantiate the class
+        """
         if self._counter >= self.image_dset.shape[0]:  # TODO update dset size feature, which is possible
             raise IndexError("Maximum number of images is %d" % (self.image_dset.shape[0]))
         self.image_dset[self._counter] = image
@@ -247,4 +310,7 @@ class H5AttributeGeomWriter:
         return self
 
     def close_file(self):
+        """
+        close the file handle (if instantiated using `with`, then this is done automatically)
+        """
         self.file_handle.close()
