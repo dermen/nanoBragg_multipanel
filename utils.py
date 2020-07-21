@@ -148,7 +148,10 @@ def sim_spots(
     SIM.Ncells_abc = int(N), int(N), int(N)
     SIM.mosaic_spread_deg = mos_spread
     SIM.mosaic_domains = mos_dom
-    SIM.Fhkl = Famp  # setting Fhkl property overrides unit cell, so we should do this before setting Amatrix
+    if isinstance(Famp, float):
+        SIM.default_F = Famp
+    else:
+        SIM.Fhkl = Famp  # setting Fhkl property overrides unit cell, so we should do this before setting Amatrix
     SIM.Amatrix = Amatrix_dials2nanoBragg(CRYSTAL)  # Amatrix takes priority for unit cell
     SIM.spot_scale = determine_spot_scale(beam_size_mm, crystal_size_mm, mosaic_vol_A3)
     if spot_scale_override is not None:
@@ -245,6 +248,21 @@ def Amatrix_dials2nanoBragg(crystal):
         raise ValueError("You need to convert your crystal model to its primitive setting first")
     Amatrix = tuple(np.array(crystal.get_A()).reshape((3, 3)).T.ravel())
     return Amatrix
+
+
+def extract_omega_and_kahn_factors(DETECTOR, BEAM, pidx):
+    try:
+        from simtbx.diffBragg import diffBragg
+    except ImportError:
+        print("This functionality only exists in diffBragg")
+    SIM = diffBragg(DETECTOR, BEAM, panel_id=pidx)
+    SIM.vectorize_umats()
+    SIM.only_save_omega_kahn = True
+    SIM.add_diffBragg_spots()
+    omega_kahn = SIM.raw_pixels.as_numpy_array()
+    SIM.free_all()
+    del SIM
+    return omega_kahn
 
 
 class H5AttributeGeomWriter:
